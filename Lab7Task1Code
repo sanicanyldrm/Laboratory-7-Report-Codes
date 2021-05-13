@@ -1,0 +1,144 @@
+#include <stdio.h>
+#include <stdlib.h>
+
+struct seatdata{// we are keeping the all data in this struct
+	int seatNum;//Seat Number
+	char name[15];
+	char surname[15];
+	char gender[1];
+};
+
+void textFile(FILE *seatsPtr){// this function writing new file for printing informations
+	
+	FILE *writePtr;
+	struct seatdata data1 = {0,"","",""};
+	
+	if((writePtr = fopen("writingfile.txt","w")) == NULL){
+		printf("file could not open");
+	}
+	else{
+		rewind(seatsPtr);
+		fprintf(writePtr,"%-13s%-9s%-10s%s\n","Seat Number","Name","Surname","Gender");
+		while(!feof(seatsPtr)){
+			fread(&data1,sizeof(struct seatdata),1,seatsPtr);
+			fprintf(writePtr,"%-13d%-9s%-10s%s\n",data1.seatNum,data1.name,data1.surname,data1.gender);	
+		}
+	fclose(writePtr);
+	}
+}
+int enterChoice(void){//menu function
+	int choice;
+	printf("\nEnter your choice\n"
+	"1-store a formatted text file of seats reserved called writingfile.txt for printing\n"
+	"2-update a reservation\n"
+	"3-add a new reservation\n"
+	"4-delete a reservation\n"
+	"5-end program\n");
+	scanf("%d",&choice);
+	return choice;
+}
+
+void newReservation(FILE *fPtr){//new reservation function
+	
+	struct seatdata data1={0,"","",""};
+	int seatNum;
+	
+	printf("Enter new seat number to reseve:");
+	scanf("%d",&seatNum);
+	
+	fseek(fPtr,(seatNum-1)*sizeof(struct seatdata),SEEK_SET);
+	
+	fread(&data1,sizeof(struct seatdata),1,fPtr);
+	
+	if(data1.seatNum != 0){
+		printf("%d. Seat already taken\n",seatNum);
+	}
+	else{
+		printf("Enter name,surname and gender:");
+		scanf("%s%s%s",data1.name,data1.surname,data1.gender);
+		
+		data1.seatNum = seatNum;
+		fseek(fPtr,(seatNum-1)*sizeof(struct seatdata),SEEK_SET);
+		fwrite(&data1,sizeof(struct seatdata),1,fPtr);
+	}//else end
+}//func end
+
+void deleteReservation(FILE *fPtr){// deleting fucntion
+	
+	struct seatdata data1;
+	struct seatdata blankdata1 = {0,"","",""};
+	
+	int seatNum;
+	printf("Enter seat number to delete:");
+	scanf("%d",&seatNum);
+	
+	fseek(fPtr,(seatNum-1)*sizeof(struct seatdata),SEEK_SET);
+	fread(&data1,sizeof(struct seatdata),1,fPtr);
+	
+	if(data1.seatNum ==0){
+		printf("Seat number does not taken.\n");
+	}
+	else{
+		fseek(fPtr,(seatNum-1)*sizeof(struct seatdata),SEEK_SET);
+		fwrite(&blankdata1,sizeof(struct seatdata),1,fPtr);
+	}//else end
+}//func end
+
+void updateReservation(FILE *fPtr){//updating function
+	
+	int seatNum;
+	struct seatdata data1 = {0,"","",""};
+	struct seatdata newreserve;
+	
+	printf("Enter seat number to update:");
+	scanf("%d",&seatNum);
+	
+	fseek(fPtr,(seatNum-1)*sizeof(struct seatdata),SEEK_SET);
+	fread(&data1,sizeof(struct seatdata),1,fPtr);
+	
+	if(data1.seatNum == 0){
+		printf("%d. seat does not taken.\n");
+	}
+	else{
+		printf("%-13d%-9s%-10s%s\n",data1.seatNum,data1.name,data1.surname,data1.gender);
+		
+		printf("Enter new name, new surname, new gender informations:");
+		scanf("%s%s%s",newreserve.name,newreserve.surname,newreserve.gender);
+		newreserve.seatNum = seatNum;
+		printf("%-13d%-9s%-10s%s\n",newreserve.seatNum,newreserve.name,newreserve.surname,newreserve.gender);
+		
+		fseek(fPtr,(seatNum-1)*sizeof(struct seatdata),SEEK_SET);
+		fwrite(&newreserve,sizeof(struct seatdata),1,fPtr);
+	}//else end
+	
+}//func end
+
+
+int main(int argc, char *argv[]) {
+	
+	FILE *bus;
+	bus = fopen("bus.dat","rb+");//we opened file in this code
+	int choice;
+	
+	while((choice = enterChoice()) != 5){//this code block allows us to choose
+		switch(choice){
+			case 1:
+				textFile(bus);
+				break;
+			case 2:
+				updateReservation(bus);
+				break;
+			case 3:
+				newReservation(bus);
+				break;
+			case 4:
+				deleteReservation(bus);
+				break;
+			case 5:
+				break;
+		}
+		
+	}
+	fclose(bus);//closing file
+	return 0;
+}
